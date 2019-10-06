@@ -3,9 +3,9 @@ package com.example.p2pmessagingapp;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.os.Debug;
 import android.os.Handler;
 import android.os.Message;
-import android.text.format.Formatter;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
@@ -14,12 +14,8 @@ import android.widget.TextView;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
-import java.util.Enumeration;
 
 public class MainActivity extends AppCompatActivity{
 
@@ -60,12 +56,14 @@ public class MainActivity extends AppCompatActivity{
     }
 
     public void onHostClicked(View v){
-        serverClass = new ServerClass();
+        String port = receivePortEditText.getText().toString();
+        serverClass = new ServerClass(Integer.parseInt(port));
         serverClass.start();
     }
 
     public void onConnectClicked(View v){
-        clientClass = new ClientClass(targetIPEditText.getText().toString());
+        String port = targetPortEditText.getText().toString();
+        clientClass = new ClientClass(targetIPEditText.getText().toString(), Integer.parseInt(port));
         clientClass.start();
     }
 
@@ -77,12 +75,17 @@ public class MainActivity extends AppCompatActivity{
     public class ServerClass extends Thread{
         Socket socket;
         ServerSocket serverSocket;
+        int port;
+
+        public ServerClass(int port) {
+            this.port = port;
+        }
 
         @Override
         public void run() {
             try {
-                serverSocket=new ServerSocket(8888);
-                Log.d(TAG, getLocalIpAddress());
+                serverSocket=new ServerSocket(port);
+                Log.d(TAG, "Waiting for client...");
                 socket=serverSocket.accept();
                 Log.d(TAG, "Connection established from server");
                 sendReceive=new SendReceive(socket);
@@ -142,10 +145,11 @@ public class MainActivity extends AppCompatActivity{
     public class ClientClass extends Thread{
         Socket socket;
         String hostAdd;
+        int port;
 
-        public  ClientClass(String hostAddress)
+        public  ClientClass(String hostAddress, int port)
         {
-            //hostAdd=hostAddress.getHostAddress();
+            this.port = port;
             this.hostAdd = hostAddress;
         }
 
@@ -153,8 +157,8 @@ public class MainActivity extends AppCompatActivity{
         public void run() {
             try {
 
-                socket=new Socket(hostAdd, 8888);
-                Log.d(TAG, "Connected");
+                socket=new Socket(hostAdd, port);
+                Log.d(TAG, "Client is connected to server");
                 sendReceive=new SendReceive(socket);
                 sendReceive.start();
             } catch (IOException e) {
@@ -162,24 +166,6 @@ public class MainActivity extends AppCompatActivity{
                 Log.d(TAG, "Can't connect from client/n"+e);
             }
         }
-    }
-
-    public String getLocalIpAddress() {
-        try {
-            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
-                NetworkInterface intf = en.nextElement();
-                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
-                    InetAddress inetAddress = enumIpAddr.nextElement();
-                    if (!inetAddress.isLoopbackAddress()) {
-                        String ip = Formatter.formatIpAddress(inetAddress.hashCode());
-                        return ip;
-                    }
-                }
-            }
-        } catch (SocketException ex) {
-            Log.e(TAG, ex.toString());
-        }
-        return null;
     }
 
 }
