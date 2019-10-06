@@ -3,7 +3,6 @@ package com.example.p2pmessagingapp;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
-import android.os.Debug;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
@@ -55,7 +54,7 @@ public class MainActivity extends AppCompatActivity{
         chatText = findViewById(R.id.chatText);
     }
 
-    public void onHostClicked(View v){
+    public void onStartServerClicked(View v){
         String port = receivePortEditText.getText().toString();
         serverClass = new ServerClass(Integer.parseInt(port));
         serverClass.start();
