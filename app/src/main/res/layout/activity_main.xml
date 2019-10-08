@@ -13,7 +13,7 @@
         android:ems="10"
         android:hint="Target Port"
         android:inputType="number"
-        android:text="8888"
+        android:text="888"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
@@ -30,7 +30,7 @@
         android:ems="10"
         android:hint="Receive Port"
         android:inputType="number"
-        android:text="8888"
+        android:text="888"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.16"
@@ -45,7 +45,7 @@
         android:ems="10"
         android:hint="Target IP"
         android:inputType="textPersonName"
-        android:text="192.168.1."
+        android:text="localhost"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
@@ -58,38 +58,44 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:ems="10"
+        android:enabled="false"
         android:hint="Message"
         android:inputType="textPersonName"
         android:text="Hello"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/sendButton"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/chatText"
-        app:layout_constraintVertical_bias="0.060000002" />
+        app:layout_constraintTop_toBottomOf="@+id/conversations"
+        app:layout_constraintVertical_bias="0.68" />
 
     <Button
         android:id="@+id/sendButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:enabled="false"
         android:onClick="onSendClicked"
         android:text="Send"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toBottomOf="@+id/messageEditText"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/messageEditText" />
+        app:layout_constraintTop_toTopOf="@+id/messageEditText"
+        app:layout_constraintVertical_bias="0.0" />
 
-    <TextView
-        android:id="@+id/chatText"
+    <ScrollView
+        android:id="@+id/conversations"
         android:layout_width="0dp"
-        android:layout_height="264dp"
-        android:hint="Chat Box"
+        android:layout_height="170dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/connectButton"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintVertical_bias="0.0"
+
+
+        />
 
     <Button
         android:id="@+id/hostButton"
@@ -120,6 +126,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Receiving Port"
+        android:textColor="#000000"
         app:layout_constraintBottom_toBottomOf="@+id/receiveEditText"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
@@ -131,6 +138,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Target IP"
+        android:textColor="#000000"
         app:layout_constraintBottom_toBottomOf="@+id/targetIPEditText"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
@@ -142,6 +150,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Target Port"
+        android:textColor="#000000"
         app:layout_constraintBottom_toTopOf="@+id/connectButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/sendTextFile"
+        android:title="Send Text File"
+        android:onClick="onSendTextFileClicked"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/saveConversation"
+        android:title="Save Conversation"
+        android:onClick="onSaveConversationClicked"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/changeWallpaper"
+        android:title="Change Wallpaper"
+        android:onClick="onChangeWallpaperClicked"
+        app:showAsAction="never" />
+</menu>
