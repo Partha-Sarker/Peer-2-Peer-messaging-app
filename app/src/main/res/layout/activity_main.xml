@@ -52,7 +52,7 @@
         android:ems="10"
         android:hint="Target Port"
         android:inputType="number"
-        android:text="888"
+        android:text="8888"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
@@ -69,7 +69,7 @@
         android:ems="10"
         android:hint="Receive Port"
         android:inputType="number"
-        android:text="888"
+        android:text="8888"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.16"
@@ -84,7 +84,7 @@
         android:ems="10"
         android:hint="Target IP"
         android:inputType="textPersonName"
-        android:text="localhost"
+        android:text="192.168.1."
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
@@ -106,12 +106,12 @@
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/conversations"
-        app:layout_constraintVertical_bias="0.68" />
+        app:layout_constraintVertical_bias="0.23000002" />
 
     <ScrollView
         android:id="@+id/conversations"
         android:layout_width="0dp"
-        android:layout_height="170dp"
+        android:layout_height="220dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"

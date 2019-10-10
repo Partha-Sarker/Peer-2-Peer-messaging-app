@@ -1,14 +1,25 @@
 package com.example.p2pmessagingapp;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.app.ActivityCompat;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Color;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Debug;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.DocumentsContract;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
@@ -22,16 +33,21 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URI;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -52,6 +68,12 @@ public class MainActivity extends AppCompatActivity {
 
     static final int MESSAGE_READ = 1;
     static final String TAG = "ahtrap";
+
+    private static final int REQUEST_EXTERNAL_STORAGE = 1;
+    private static String[] PERMISSIONS_STORAGE = {
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+    };
 
     Handler handler = new Handler(msg -> {
         if (msg.what == MESSAGE_READ) {
@@ -77,6 +99,62 @@ public class MainActivity extends AppCompatActivity {
         conversationLayout = new LinearLayout(this);
         conversationLayout.setOrientation(LinearLayout.VERTICAL);
         conversations.addView(conversationLayout);
+
+        verifyStoragePermissions();
+        verifyDataFolder();
+
+//        Intent intent = new Intent().setType("text/plain").setAction(Intent.ACTION_GET_CONTENT);
+//        startActivityForResult(Intent.createChooser(intent, "Select a TXT file"), 123);
+
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        super.onActivityResult(requestCode, resultCode, intent);
+        if(requestCode==123 && resultCode==RESULT_OK) {
+            Uri uri = intent.getData();
+            String path = getFilePathFromUri(uri);
+            File file = new File(path);
+            if(file.exists())
+                Log.d(TAG, "Selected file exists");
+            else
+                Log.e(TAG, "Selected file doesn't exists");
+
+            String fileText = readTextFile(uri);
+            Log.d(TAG, "text inside file: "+fileText);
+            sendReceive.write("file@%@"+file.getName()+"@%@"+fileText);
+        }
+    }
+
+    private String readTextFile(Uri uri){
+        BufferedReader reader = null;
+        StringBuilder builder = new StringBuilder();
+        try {
+            reader = new BufferedReader(new InputStreamReader(getContentResolver().openInputStream(uri)));
+            String line = "";
+
+            while ((line = reader.readLine()) != null) {
+                builder.append(line);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (reader != null){
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return builder.toString();
+    }
+
+    private String getFilePathFromUri(Uri uri){
+        String path = uri.getPathSegments().get(1);
+        path = Environment.getExternalStorageDirectory().getPath()+"/"+path.split(":")[1];
+        return path;
     }
 
     @Override
@@ -110,7 +188,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onSendTextFileClicked(MenuItem item) {
-        showToast(item.getTitle().toString());
+        Intent intent = new Intent().setType("text/plain").setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(Intent.createChooser(intent, "Select a TXT file"), 123);
     }
 
     public void onSaveConversationClicked(MenuItem item) {
@@ -125,7 +204,7 @@ public class MainActivity extends AppCompatActivity {
                 allMessage += "CLIENT: " + children.getText().toString() + "\n\n";
             }
         }
-        writeToFile(allMessage);
+        writeToFile("conversations", allMessage, true);
     }
 
     public void onChangeBackgroundClicked(MenuItem item) {
@@ -171,9 +250,7 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     outputStream.write(msg.getBytes());
                     addMessage(Color.BLACK, msg);
-                    runOnUiThread(() ->
-                            messageEditText.setText("")
-                    );
+                    runOnUiThread(() -> messageEditText.setText(""));
                 } catch (IOException e) {
                     Log.d(TAG, "Can't send message: " + e);
                 } catch (Exception e) {
@@ -261,16 +338,28 @@ public class MainActivity extends AppCompatActivity {
 
                     if(messages[0].equals("message"))
                         message = messages[1];
-                    else if(messages[0].equals("background")){
-                        changeBackground(messages[1]);
-                        if(color == Color.BLACK)
-                            message = "You have changed the background";
-                        else
-                            message = "Client has changed the background";
+                    else{
+                        if(messages[0].equals("background")){
+                            changeBackground(messages[1]);
+                            if(color == Color.BLACK)
+                                message = "You have changed the background";
+                            else
+                                message = "Client has changed the background";
+                        }
+                        else{
+                            if(color == Color.BLACK)
+                                message = messages[1]+" has been sent";
+                            else{
+                                message = messages[1]+" has been received and downloaded";
+                                writeToFile(messages[1], messages[2], false);
+                            }
+                        }
+
                         textView.setTextSize(15);
-                        textView.setPadding(0, 0, 0, 0);
+                        textView.setPadding(0, 10, 0, 10);
                         textView.setGravity(Gravity.CENTER);
                     }
+
 
                     textView.setText(message);
                     conversationLayout.addView(textView);
@@ -290,13 +379,19 @@ public class MainActivity extends AppCompatActivity {
             saveConversation.setEnabled(true);
             sendTextFile.setEnabled(true);
             changeBackground.setEnabled(true);
+            messageEditText.requestFocus();
         });
     }
 
-    private void writeToFile(String data) {
+    private void writeToFile(String fileName, String data, boolean timeStamp) {
         Long time= System.currentTimeMillis();
-        File path = this.getExternalFilesDir(null);
-        File file = new File(path, "Conversations "+time.toString()+".txt");
+        String timeMill = " "+time.toString();
+        String path = Environment.getExternalStorageDirectory().toString();
+        File file = null;
+        if(timeStamp)
+            file = new File(path+"/Peer 2 Peer/Conversations", fileName+timeMill+".txt");
+        else
+            file = new File(path+"/Peer 2 Peer/Saved txt files", fileName);
         FileOutputStream stream;
         try {
             stream = new FileOutputStream(file, false);
@@ -324,6 +419,33 @@ public class MainActivity extends AppCompatActivity {
             else
                 layout.setBackgroundColor(Color.WHITE);
         });
+    }
+
+    public void verifyStoragePermissions() {
+        // Check if we have write permission
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+                requestPermissions(
+                        PERMISSIONS_STORAGE,
+                        REQUEST_EXTERNAL_STORAGE
+                );
+            }
+        }
+    }
+
+    private void verifyDataFolder() {
+        File folder = new File(Environment.getExternalStorageDirectory() + "/Peer 2 Peer");
+        File folder1 = new File(folder.getPath() + "/Conversations");
+        File folder2 = new File(folder.getPath() + "/Saved txt files");
+        if(!folder.exists() || !folder.isDirectory()) {
+            folder.mkdir();
+            folder1.mkdir();
+            folder2.mkdir();
+        }
+        else if(!folder1.exists())
+            folder1.mkdir();
+        else if(!folder2.exists())
+            folder2.mkdir();
     }
 
 }
