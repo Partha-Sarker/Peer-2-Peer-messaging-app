@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    >
     <item
         android:id="@+id/sendTextFile"
         android:title="Send Text File"
@@ -14,8 +15,38 @@
         app:showAsAction="never" />
 
     <item
-        android:id="@+id/changeWallpaper"
-        android:title="Change Wallpaper"
-        android:onClick="onChangeWallpaperClicked"
-        app:showAsAction="never" />
+        android:id="@+id/changeBackground"
+        android:title="Change Background"
+        app:showAsAction="never">
+        <menu>
+            <item
+                android:id="@+id/background1"
+                android:title="Background 1"
+                android:onClick="onChangeBackgroundClicked"
+                app:showAsAction="never" />
+
+            <item
+                android:id="@+id/background2"
+                android:title="Background 2"
+                android:onClick="onChangeBackgroundClicked"
+                app:showAsAction="never" />
+
+            <item
+                android:id="@+id/background3"
+                android:title="Background 3"
+                android:onClick="onChangeBackgroundClicked"
+                app:showAsAction="never" />
+
+            <item
+                android:id="@+id/background4"
+                android:title="Background 4"
+                android:onClick="onChangeBackgroundClicked"
+                app:showAsAction="never" />
+            <item
+                android:id="@+id/background5"
+                android:title="White"
+                android:onClick="onChangeBackgroundClicked"
+                app:showAsAction="never" />
+        </menu>
+    </item>
 </menu>
