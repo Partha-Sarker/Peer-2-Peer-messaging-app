@@ -1,7 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    >
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/wifi"
+        android:title="Wifi"
+        android:icon="@drawable/wifi_on"
+        android:onClick="onWifiClicked"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/IP"
+        android:title="My IP"
+        android:onClick="onMyIPClicked"
+        app:showAsAction="never" />
     <item
         android:id="@+id/sendTextFile"
         android:title="Send Text File"
