@@ -8,11 +8,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.drawable.BitmapDrawable;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.Build;
@@ -21,14 +18,12 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.format.Formatter;
-import android.util.Base64;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewParent;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
@@ -39,12 +34,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent;
-import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEventListener;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -54,7 +46,6 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
@@ -68,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
     ScrollView conversations;
     LinearLayout conversationLayout;
 
-    MenuItem saveConversation, changeBackground, sendTextFile;
+    MenuItem saveConversation, changeBackground, sendTextFile, themeItem, notificationItem;
 
     Button startServerButton, connectButton;
     ImageButton sendButton;
@@ -82,7 +73,9 @@ public class MainActivity extends AppCompatActivity {
 
     String myIP, currentBackground, allMessage = "", myName, clientName = "CLIENT";
 
-    boolean wasClient = false, firstMessage = true, clientFirstMessage = true, darkModeEnabled;
+    MediaPlayer notification;
+
+    boolean wasClient = false, firstMessage = true, clientFirstMessage = true, darkModeEnabled, notificationEnabled;
 
     static final int MESSAGE_READ = 1;
     static final String TAG = "ahtrap";
@@ -102,9 +95,13 @@ public class MainActivity extends AppCompatActivity {
                 clientFirstMessage = false;
                 showToast("Client name is: "+clientName);
                 setTitle(clientName);
+                return true;
             }
-            else
-                addMessage(Color.BLUE, tempMsg);
+            addMessage(Color.BLUE, tempMsg);
+            if (notificationEnabled) {
+                notification.seekTo(0);
+                notification.start();
+            }
         }
         return true;
     });
@@ -237,6 +234,7 @@ public class MainActivity extends AppCompatActivity {
         conversations.addView(conversationLayout);
 
         currentBackground = "White";
+        notification = MediaPlayer.create(this, R.raw.notification);
 
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         if(!wifiManager.isWifiEnabled()){
@@ -253,10 +251,7 @@ public class MainActivity extends AppCompatActivity {
         editor = pref.edit();
         myName = pref.getString("name", "ME");
         darkModeEnabled = pref.getBoolean("darkMode", false);
-        if(darkModeEnabled){
-            darkModeEnabled = false;
-            onDarkModeClicked(null);
-        }
+
         showToast("Welcome "+myName);
 
         KeyboardVisibilityEvent.setEventListener( this, isOpen -> runOnUiThread( ()-> conversations.post(() -> conversations.fullScroll(View.FOCUS_DOWN))));
@@ -289,6 +284,16 @@ public class MainActivity extends AppCompatActivity {
         changeBackground.setEnabled(false);
         sendTextFile = menu.findItem(R.id.sendTextFile);
         sendTextFile.setEnabled(false);
+        notificationItem = menu.findItem(R.id.notification);
+        themeItem = menu.findItem(R.id.darkMode);
+        if(darkModeEnabled){
+            layout.setBackgroundColor(Color.BLACK);
+            themeItem.setIcon(R.drawable.dark);
+        }
+
+        notificationEnabled = pref.getBoolean("notification", true);
+        if(!notificationEnabled)
+            notificationItem.setIcon(R.drawable.notifications_off);
         return true;
     }
 
@@ -375,12 +380,25 @@ public class MainActivity extends AppCompatActivity {
         if(darkModeEnabled){
             darkModeEnabled = false;
             changeBackground(currentBackground);
+            themeItem.setIcon(R.drawable.light);
         }
         else{
             darkModeEnabled = true;
             layout.setBackgroundColor(Color.BLACK);
+            themeItem.setIcon(R.drawable.dark);
         }
         editor.putBoolean("darkMode", darkModeEnabled);
+        editor.commit();
+    }
+
+    public void onNotificationClicked(MenuItem item){
+        if(notificationEnabled)
+            notificationItem.setIcon(R.drawable.notifications_off);
+        else
+            notificationItem.setIcon(R.drawable.notification_on);
+
+        notificationEnabled = !notificationEnabled;
+        editor.putBoolean("notification", notificationEnabled);
         editor.commit();
     }
 

@@ -1,6 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/notification"
+        android:title="Toggle Notification"
+        android:icon="@drawable/notification_on"
+        android:onClick="onNotificationClicked"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/darkMode"
+        android:title="Toggle Dark Mode"
+        android:icon="@drawable/light"
+        android:onClick="onDarkModeClicked"
+        app:showAsAction="ifRoom" />
     <item
         android:id="@+id/wifi"
         android:title="Wifi"
@@ -11,11 +25,6 @@
         android:id="@+id/IP"
         android:title="My IP"
         android:onClick="onMyIPClicked"
-        app:showAsAction="never" />
-    <item
-        android:id="@+id/darkMode"
-        android:title="Toggle Dark Mode"
-        android:onClick="onDarkModeClicked"
         app:showAsAction="never" />
     <item
         android:id="@+id/sendTextFile"
@@ -62,11 +71,6 @@
                 android:title="White"
                 android:onClick="onChangeBackgroundClicked"
                 app:showAsAction="never" />
-<!--            <item-->
-<!--                android:id="@+id/chooseBackground"-->
-<!--                android:title="Choose Background Image"-->
-<!--                android:onClick="onChooseBackgroundClicked"-->
-<!--                app:showAsAction="never" />-->
         </menu>
     </item>
 </menu>
