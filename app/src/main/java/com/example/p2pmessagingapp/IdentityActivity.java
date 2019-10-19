@@ -23,7 +23,6 @@ public class IdentityActivity extends AppCompatActivity {
         nameEditText = findViewById(R.id.nameEditText);
         nameEditText.setOnKeyListener( (v, keyCode, event) -> {
             if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-                // Perform action on key press
                 onSubmitClicked(null);
                 return true;
             }

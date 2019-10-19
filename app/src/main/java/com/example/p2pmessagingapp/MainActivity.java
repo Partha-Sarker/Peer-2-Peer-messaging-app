@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -27,6 +28,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewParent;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
@@ -35,6 +37,9 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent;
+import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEventListener;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -51,6 +56,9 @@ import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
+
+import static java.lang.Thread.sleep;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -74,13 +82,16 @@ public class MainActivity extends AppCompatActivity {
 
     String myIP, currentBackground, allMessage = "", myName, clientName = "CLIENT";
 
-    boolean wasClient = false, firstMessage = true, clientFirstMessage = true;
+    boolean wasClient = false, firstMessage = true, clientFirstMessage = true, darkModeEnabled;
 
     static final int MESSAGE_READ = 1;
     static final String TAG = "ahtrap";
 
     private static final int REQUEST_EXTERNAL_STORAGE = 1;
     private static String[] PERMISSIONS_STORAGE = {Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE};
+
+    SharedPreferences pref;
+    SharedPreferences.Editor editor;
 
     Handler handler = new Handler(msg -> {
         if (msg.what == MESSAGE_READ) {
@@ -90,6 +101,7 @@ public class MainActivity extends AppCompatActivity {
                 clientName = tempMsg;
                 clientFirstMessage = false;
                 showToast("Client name is: "+clientName);
+                setTitle(clientName);
             }
             else
                 addMessage(Color.BLUE, tempMsg);
@@ -237,9 +249,17 @@ public class MainActivity extends AppCompatActivity {
 
         receivePortEditText.requestFocus();
 
-        SharedPreferences pref = getSharedPreferences("MyPref", MODE_PRIVATE);
+        pref = getSharedPreferences("MyPref", MODE_PRIVATE);
+        editor = pref.edit();
         myName = pref.getString("name", "ME");
-        showToast(myName);
+        darkModeEnabled = pref.getBoolean("darkMode", false);
+        if(darkModeEnabled){
+            darkModeEnabled = false;
+            onDarkModeClicked(null);
+        }
+        showToast("Welcome "+myName);
+
+        KeyboardVisibilityEvent.setEventListener( this, isOpen -> runOnUiThread( ()-> conversations.post(() -> conversations.fullScroll(View.FOCUS_DOWN))));
     }
 
     @Override
@@ -327,7 +347,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onSaveConversationClicked(MenuItem item) {
-        writeToFile("conversations", allMessage, true);
+        writeToFile("conversation with "+clientName, allMessage, true);
+        saveConversation.setEnabled(false);
+        new Thread( ()->{
+            try {
+                sleep(1100);
+            } catch (InterruptedException e) {
+                Log.e(TAG, e.toString());
+            } finally {
+                runOnUiThread( ()-> saveConversation.setEnabled(true));
+            }
+
+        } ).start();
+
     }
 
     public void onChangeBackgroundClicked(MenuItem item) {
@@ -337,6 +369,19 @@ public class MainActivity extends AppCompatActivity {
         changeBackground(item.getTitle().toString());
         sendReceive.write("background@%@"+item.getTitle());
         currentBackground = item.getTitle().toString();
+    }
+
+    public void onDarkModeClicked(MenuItem item){
+        if(darkModeEnabled){
+            darkModeEnabled = false;
+            changeBackground(currentBackground);
+        }
+        else{
+            darkModeEnabled = true;
+            layout.setBackgroundColor(Color.BLACK);
+        }
+        editor.putBoolean("darkMode", darkModeEnabled);
+        editor.commit();
     }
 
     private void addMessage(int color, String fullMessage) {
@@ -352,28 +397,42 @@ public class MainActivity extends AppCompatActivity {
                     TextView textView = new TextView(this);
                     textView.setTextSize(20);
                     LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT);
+                    textView.setLayoutParams(params);
                     textView.setPadding(20, 10, 20, 10);
+
+                    TextView dateView = new TextView(this);
+                    dateView.setTextColor(Color.GRAY);
+                    dateView.setText(currentTime);
+                    LinearLayout.LayoutParams dateParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+                    dateView.setTextSize(10);
+                    dateView.setLayoutParams(dateParams);
+
                     if (color == Color.BLACK) {
                         allMessage += "You ("+currentTime+"): ";
                         textView.setTextColor(Color.WHITE);
+                        params.setMargins(200,0,10,5);
+
                         if(wasClient || firstMessage)
-                            params.setMargins(200,30,10,5);
+                            dateParams.setMargins(0,30,20,5);
                         else
-                            params.setMargins(200,5,10,5);
-                        textView.setLayoutParams(params);
-                        textView.setGravity(Gravity.RIGHT);
+                            dateParams.setMargins(0,10,20,5);
+
+                        dateParams.gravity = Gravity.RIGHT;
+                        params.gravity = Gravity.RIGHT;
                         textView.setBackgroundResource(R.drawable.my_message);
                         wasClient = false;
                     } else if(color == Color.BLUE){
                         allMessage += clientName+" ("+currentTime+"): ";
                         textView.setTextColor(Color.BLACK);
+                        params.setMargins(10,0,200,5);
                         if(!wasClient || firstMessage)
-                            params.setMargins(10,30,200,5);
+                            dateParams.setMargins(20,30,0,5);
                         else
-                            params.setMargins(10,5,200,5);
-                        textView.setLayoutParams(params);
+                            dateParams.setMargins(20,10,0,5);
                         textView.setBackgroundResource(R.drawable.client_message);
                         wasClient = true;
                     }
@@ -404,14 +463,17 @@ public class MainActivity extends AppCompatActivity {
                             }
 
                         }
-
+                        dateParams.setMargins(0,15,0,5);
+                        dateParams.gravity = Gravity.CENTER;
                         textView.setTextSize(15);
-                        textView.setPadding(0, 10, 0, 10);
-                        params.setMargins(100,20,100,20);
+                        textView.setPadding(5, 10, 5, 10);
+                        params.setMargins(100,0,100,5);
                         textView.setGravity(Gravity.CENTER);
+
                     }
                     textView.setText(message);
                     allMessage += message+"\n\n";
+                    conversationLayout.addView(dateView);
                     conversationLayout.addView(textView);
                     conversations.post(() -> conversations.fullScroll(View.FOCUS_DOWN));
                     firstMessage = false;
@@ -445,12 +507,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void writeToFile(String fileName, String data, boolean timeStamp) {
-        Long time= System.currentTimeMillis();
-        String timeMill = " "+time.toString();
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault());
+        String currentDateandTime = sdf.format(new Date());
         String path = Environment.getExternalStorageDirectory().toString();
         File file = null;
         if(timeStamp)
-            file = new File(path+"/Peer 2 Peer/Conversations", fileName+timeMill+".txt");
+            file = new File(path+"/Peer 2 Peer/Conversations", fileName+" "+currentDateandTime+".txt");
         else
             file = new File(path+"/Peer 2 Peer/Saved Files", fileName);
         FileOutputStream stream;
@@ -468,6 +530,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void changeBackground(String message){
         currentBackground = message;
+        if(darkModeEnabled)
+            return;
         runOnUiThread( ()-> {
             if(message.equals("Background 1"))
                 layout.setBackgroundResource(R.drawable.bg1);
@@ -479,12 +543,6 @@ public class MainActivity extends AppCompatActivity {
                 layout.setBackgroundResource(R.drawable.bg4);
             else if(message.equals("White"))
                 layout.setBackgroundColor(Color.WHITE);
-            else{
-                byte[] decodedString = Base64.decode(message, Base64.DEFAULT);
-                Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-                BitmapDrawable background = new BitmapDrawable(decodedByte);
-                layout.setBackgroundDrawable(background);
-            }
         });
     }
 

@@ -136,7 +136,6 @@
         android:id="@+id/conversations"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="5dp"
         android:layout_marginBottom="5dp"
 
 

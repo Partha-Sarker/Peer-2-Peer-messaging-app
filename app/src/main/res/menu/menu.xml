@@ -13,6 +13,11 @@
         android:onClick="onMyIPClicked"
         app:showAsAction="never" />
     <item
+        android:id="@+id/darkMode"
+        android:title="Toggle Dark Mode"
+        android:onClick="onDarkModeClicked"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/sendTextFile"
         android:title="Send Text File"
         android:onClick="onSendTextFileClicked"
