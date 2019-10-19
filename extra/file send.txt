@@ -1,0 +1,54 @@
+	***Create a button and call this method when the button is pressed
+
+	public void onPressed(View v){
+        Intent intent = new Intent().setType("text/plain").setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(Intent.createChooser(intent, "Select a TXT file"), 123);
+	}
+
+
+
+
+
+
+    ***Create and put this method on MainActivity.class
+
+    private String uriToString(Uri uri){
+        BufferedReader reader = null;
+        StringBuilder builder = new StringBuilder();
+        try {
+            reader = new BufferedReader(new InputStreamReader(getContentResolver().openInputStream(uri)));
+            String line = "";
+
+            while ((line = reader.readLine()) != null) {
+                builder.append("\n"+line);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (reader != null){
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return builder.toString();
+    }
+
+
+
+
+
+	***Override this method in MainActivity.class
+
+	@Override
+    public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        super.onActivityResult(requestCode, resultCode, intent);
+        if(requestCode==123 && resultCode==RESULT_OK) {
+            Uri uri = intent.getData();
+            String textInsideTheSelectedFile = uriToString(uri);
+            //Now do your stuff. Must attach a code at the beginning of the string before sending this string.
+        }
+    }

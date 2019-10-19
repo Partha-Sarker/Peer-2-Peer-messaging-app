@@ -1,0 +1,50 @@
+    ***Add this lines of code inside AndroidManifest.xml
+
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+
+
+    ****declare this variables
+
+    private static final int REQUEST_EXTERNAL_STORAGE = 1;
+    private static String[] PERMISSIONS_STORAGE = {Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE};
+
+
+
+    ***Create and call this function from onCreate(). It is needed for granting storage permission.
+
+    public void verifyStoragePermissions() {
+        // Check if we have write permission
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+                requestPermissions(
+                        PERMISSIONS_STORAGE,
+                        REQUEST_EXTERNAL_STORAGE
+                );
+            }
+        }
+    }
+
+
+
+
+    ***To save string to a textFile
+
+    private void writeToFile(String fileName, String data) {
+        Long time= System.currentTimeMillis();
+        String timeMill = " "+time.toString();
+        File defaultDir = Environment.getExternalStorageDirectory();
+        File file = new File(defaultDir, fileName+timeMill+".txt");
+        FileOutputStream stream;
+        try {
+            stream = new FileOutputStream(file, false);
+            stream.write(data.getBytes());
+            stream.close();
+            showToast("file saved in: "+file.getPath());
+        } catch (FileNotFoundException e) {
+            Log.d(TAG, e.toString());
+        } catch (IOException e) {
+            Log.d(TAG, e.toString());
+        }
+    }

@@ -14,50 +14,46 @@
         android:background="@drawable/send_icon"
         android:onClick="onSendClicked"
         android:padding="20dp"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="@+id/messageEditText"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/messageEditText" />
 
-<!--        android:background="@drawable/custom_button"-->
     <Button
         android:id="@+id/startServerButton"
         android:layout_width="wrap_content"
-        android:layout_height="40dp"
-        android:layout_marginTop="5dp"
+        android:layout_height="30dp"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/custom_button"
         android:onClick="onStartServerClicked"
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
         android:text="Start Server"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toBottomOf="@+id/receiveEditText"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/receiveEditText"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintStart_toEndOf="@+id/receiveEditText"
+        app:layout_constraintTop_toTopOf="@+id/receiveEditText" />
 
-<!--        android:background="@drawable/custom_button"-->
     <Button
         android:id="@+id/connectDisconnectButton"
         android:layout_width="wrap_content"
-        android:layout_height="40dp"
-        android:layout_marginTop="5dp"
-        android:layout_marginBottom="5dp"
+        android:layout_height="30dp"
+        android:background="@drawable/custom_button"
         android:onClick="onConnectClicked"
         android:text="Connect"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toBottomOf="@+id/targetPortEditText"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/targetPortEditText"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintStart_toStartOf="@+id/startServerButton"
+        app:layout_constraintTop_toTopOf="@+id/targetIPEditText" />
 
-<!--        android:background="@drawable/custom_input"-->
     <EditText
         android:id="@+id/targetPortEditText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="5dp"
-        android:layout_marginBottom="5dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/custom_input"
         android:ems="10"
         android:hint="Target Port"
         android:inputType="number"
@@ -67,42 +63,38 @@
         android:paddingBottom="5dp"
         android:text="8888"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="@+id/targetIPEditText"
+        app:layout_constraintEnd_toEndOf="@+id/receiveEditText"
+        app:layout_constraintStart_toStartOf="@+id/receiveEditText"
         app:layout_constraintTop_toBottomOf="@+id/targetIPEditText"
         app:layout_constraintVertical_bias="0.0" />
 
-<!--        android:background="@drawable/custom_input"-->
     <EditText
         android:id="@+id/receiveEditText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="10dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginBottom="10dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginBottom="50dp"
+        android:background="@drawable/custom_input"
         android:ems="10"
-        android:hint="Receive Port"
+        android:hint="Host or Receiving Port"
         android:inputType="number"
         android:paddingLeft="10dp"
         android:paddingTop="5dp"
         android:paddingRight="10dp"
         android:paddingBottom="5dp"
         android:text="8888"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.16"
-        app:layout_constraintStart_toEndOf="@+id/receivingPortText"
+        app:layout_constraintBottom_toTopOf="@+id/targetIPEditText"
+        app:layout_constraintEnd_toStartOf="@+id/startServerButton"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintVertical_bias="1.0" />
 
-<!--        android:background="@drawable/custom_input"-->
     <EditText
         android:id="@+id/targetIPEditText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:layout_marginBottom="10dp"
+        android:background="@drawable/custom_input"
         android:ems="10"
         android:hint="Target IP"
         android:inputType="textPersonName"
@@ -110,93 +102,48 @@
         android:paddingTop="5dp"
         android:paddingRight="10dp"
         android:paddingBottom="5dp"
-        android:text="192.168.1."
+        android:text="localhost"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintEnd_toEndOf="@+id/receiveEditText"
         app:layout_constraintStart_toStartOf="@+id/receiveEditText"
-        app:layout_constraintTop_toBottomOf="@+id/startServerButton"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.39999998" />
 
-<!--        android:background="@drawable/custom_input"-->
     <EditText
         android:id="@+id/messageEditText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginLeft="5dp"
-        android:layout_marginTop="10dp"
+        android:layout_marginBottom="15dp"
+        android:background="@drawable/custom_input"
         android:ems="10"
-        android:enabled="false"
         android:hint="Message"
+        android:inputType="textMultiLine"
         android:paddingLeft="10dp"
         android:paddingTop="5dp"
         android:paddingEnd="5dp"
         android:paddingRight="10dp"
         android:paddingBottom="5dp"
-        android:inputType="textMultiLine"
-        android:text="Hello"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/sendButton"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/conversations"
-        app:layout_constraintVertical_bias="0.19" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0" />
 
     <ScrollView
         android:id="@+id/conversations"
         android:layout_width="0dp"
-        android:layout_height="240dp"
-        android:layout_marginLeft="5dp"
-        android:layout_marginTop="5dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-
-
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/connectDisconnectButton"
-        app:layout_constraintVertical_bias="0.0" />
-
-    <TextView
-        android:id="@+id/receivingPortText"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="5dp"
-        android:text="Receiving Port"
-        android:textColor="#000000"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="@+id/receiveEditText"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/receiveEditText" />
+        android:layout_marginBottom="5dp"
 
-    <TextView
-        android:id="@+id/targetIPText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="5dp"
-        android:text="Target IP"
-        android:textColor="#000000"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="@+id/targetIPEditText"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/startServerButton" />
 
-    <TextView
-        android:id="@+id/targetPortText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="5dp"
-        android:text="Target Port"
-        android:textColor="#000000"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toTopOf="@+id/connectDisconnectButton"
+        app:layout_constraintBottom_toTopOf="@+id/messageEditText"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/targetPortEditText" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

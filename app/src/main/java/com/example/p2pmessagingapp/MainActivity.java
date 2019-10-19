@@ -6,8 +6,12 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.Build;
@@ -16,6 +20,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.format.Formatter;
+import android.util.Base64;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
@@ -31,8 +36,10 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -41,13 +48,15 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity {
 
     ConstraintLayout layout;
 
     EditText receivePortEditText, targetPortEditText, messageEditText, targetIPEditText;
-    TextView receivedPortText, targetPortText, targetIPText;
     ScrollView conversations;
     LinearLayout conversationLayout;
 
@@ -63,9 +72,9 @@ public class MainActivity extends AppCompatActivity {
 
     WifiManager wifiManager;
 
-    String myIP, currentBackground;
+    String myIP, currentBackground, allMessage = "", myName, clientName = "CLIENT";
 
-    boolean wasClient = false;
+    boolean wasClient = false, firstMessage = true, clientFirstMessage = true;
 
     static final int MESSAGE_READ = 1;
     static final String TAG = "ahtrap";
@@ -77,7 +86,13 @@ public class MainActivity extends AppCompatActivity {
         if (msg.what == MESSAGE_READ) {
             byte[] readBuff = (byte[]) msg.obj;
             String tempMsg = new String(readBuff, 0, msg.arg1);
-            addMessage(Color.BLUE, tempMsg);
+            if(clientFirstMessage) {
+                clientName = tempMsg;
+                clientFirstMessage = false;
+                showToast("Client name is: "+clientName);
+            }
+            else
+                addMessage(Color.BLUE, tempMsg);
         }
         return true;
     });
@@ -144,7 +159,6 @@ public class MainActivity extends AppCompatActivity {
                 serverSocket = new ServerSocket(port);
                 Looper.prepare();
                 showToast("Server Started. Waiting for client...");
-                //disableComponentOnHost();
                 Log.d(TAG, "Waiting for client...");
                 socket = serverSocket.accept();
                 Log.d(TAG, "Connection established from server");
@@ -181,6 +195,7 @@ public class MainActivity extends AppCompatActivity {
                 showToast("Connected to other device. You can now exchange messages.");
                 Log.d(TAG, "Client is connected to server");
                 enableChatComponent();
+                sendReceive.write(myName);
             } catch (IOException e) {
                 e.printStackTrace();
                 Log.d(TAG, "Can't connect to server. Check the IP address and Port number and try again: " + e);
@@ -202,16 +217,12 @@ public class MainActivity extends AppCompatActivity {
         sendButton = findViewById(R.id.sendButton);
         startServerButton = findViewById(R.id.startServerButton);
         connectButton = findViewById(R.id.connectDisconnectButton);
-        receivedPortText = findViewById(R.id.receivingPortText);
-        targetIPText = findViewById(R.id.targetIPText);
-        targetPortText = findViewById(R.id.targetPortText);
 
         conversations = findViewById(R.id.conversations);
         conversationLayout = new LinearLayout(this);
+        conversationLayout.setPaddingRelative(0, 100, 0, 50);
         conversationLayout.setOrientation(LinearLayout.VERTICAL);
         conversations.addView(conversationLayout);
-
-        sendButton.setEnabled(false);
 
         currentBackground = "White";
 
@@ -223,6 +234,12 @@ public class MainActivity extends AppCompatActivity {
 
         verifyStoragePermissions();
         verifyDataFolder();
+
+        receivePortEditText.requestFocus();
+
+        SharedPreferences pref = getSharedPreferences("MyPref", MODE_PRIVATE);
+        myName = pref.getString("name", "ME");
+        showToast(myName);
     }
 
     @Override
@@ -238,7 +255,6 @@ public class MainActivity extends AppCompatActivity {
                 Log.e(TAG, "Selected file doesn't exists");
 
             String fileText = readTextFile(uri);
-            Log.d(TAG, "text inside file: "+fileText);
             sendReceive.write("file@%@"+file.getName()+"@%@"+fileText);
         }
     }
@@ -258,20 +274,30 @@ public class MainActivity extends AppCompatActivity {
 
     public void onStartServerClicked(View v) {
         String port = receivePortEditText.getText().toString();
+        if(port == null || port.equals("")){
+            showToast("Type a valid port");
+            return;
+        }
         serverClass = new ServerClass(Integer.parseInt(port));
         serverClass.start();
     }
 
     public void onConnectClicked(View v) {
         String port = targetPortEditText.getText().toString();
-        clientClass = new ClientClass(targetIPEditText.getText().toString(), Integer.parseInt(port));
+        String hostIP = targetIPEditText.getText().toString();
+        if(port == null || port.equals("") || hostIP == null || hostIP.equals("")){
+            showToast("Port or IP address is invalid");
+            return;
+        }
+        clientClass = new ClientClass(hostIP, Integer.parseInt(port));
         clientClass.start();
     }
 
     public void onSendClicked(View v) {
         String msg = messageEditText.getText().toString();
         msg = msg.trim();
-        if (msg != null && !msg.equals("")) sendReceive.write("message@%@"+msg);
+        if (msg != null && !msg.equals(""))
+            sendReceive.write("message@%@"+msg);
     }
 
     public void onWifiClicked(MenuItem item){
@@ -301,17 +327,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onSaveConversationClicked(MenuItem item) {
-        String allMessage = "";
-        int count = conversationLayout.getChildCount();
-        TextView children;
-        for (int i = 0; i < count; i++) {
-            children = (TextView) conversationLayout.getChildAt(i);
-            if (children.getCurrentTextColor() == Color.BLACK) {
-                allMessage += "ME: " + children.getText().toString() + "\n\n";
-            } else {
-                allMessage += "CLIENT: " + children.getText().toString() + "\n\n";
-            }
-        }
         writeToFile("conversations", allMessage, true);
     }
 
@@ -326,7 +341,14 @@ public class MainActivity extends AppCompatActivity {
 
     private void addMessage(int color, String fullMessage) {
 
+        if(fullMessage.equals(myName))
+            return;
+
         runOnUiThread(() -> {
+                    Date date=new Date();
+                    SimpleDateFormat sdf=new SimpleDateFormat("hh:mm a");
+                    String currentTime = sdf.format(date);
+
                     TextView textView = new TextView(this);
                     textView.setTextSize(20);
                     LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
@@ -334,23 +356,25 @@ public class MainActivity extends AppCompatActivity {
                         LinearLayout.LayoutParams.WRAP_CONTENT);
                     textView.setPadding(20, 10, 20, 10);
                     if (color == Color.BLACK) {
+                        allMessage += "You ("+currentTime+"): ";
                         textView.setTextColor(Color.WHITE);
-                        if(wasClient)
+                        if(wasClient || firstMessage)
                             params.setMargins(200,30,10,5);
                         else
                             params.setMargins(200,5,10,5);
                         textView.setLayoutParams(params);
                         textView.setGravity(Gravity.RIGHT);
-//                        textView.setBackgroundResource(R.drawable.my_message);
+                        textView.setBackgroundResource(R.drawable.my_message);
                         wasClient = false;
                     } else if(color == Color.BLUE){
+                        allMessage += clientName+" ("+currentTime+"): ";
                         textView.setTextColor(Color.BLACK);
-                        if(!wasClient)
+                        if(!wasClient || firstMessage)
                             params.setMargins(10,30,200,5);
                         else
                             params.setMargins(10,5,200,5);
                         textView.setLayoutParams(params);
-//                        textView.setBackgroundResource(R.drawable.client_message);
+                        textView.setBackgroundResource(R.drawable.client_message);
                         wasClient = true;
                     }
 
@@ -361,16 +385,19 @@ public class MainActivity extends AppCompatActivity {
                     if(messages[0].equals("message"))
                         message = messages[1];
                     else{
+                        message = "chicki chicki :(";
                         if(messages[0].equals("background")){
                             changeBackground(messages[1]);
                             if(color == Color.BLACK)
-                                message = "You have changed the background";
+                                message = "Background has been changed to "+messages[1];
                             else
-                                message = "Client has changed the background";
+                                message = "Background has been changed to "+messages[1];
                         }
-                        else{
-                            if(color == Color.BLACK)
+                        else if(messages[0].equals("file")){
+                            if(color == Color.BLACK){
                                 message = messages[1]+" has been sent";
+                                showToast(message);
+                            }
                             else{
                                 message = messages[1]+" has been received and downloaded";
                                 writeToFile(messages[1], messages[2], false);
@@ -383,11 +410,11 @@ public class MainActivity extends AppCompatActivity {
                         params.setMargins(100,20,100,20);
                         textView.setGravity(Gravity.CENTER);
                     }
-
-
                     textView.setText(message);
+                    allMessage += message+"\n\n";
                     conversationLayout.addView(textView);
                     conversations.post(() -> conversations.fullScroll(View.FOCUS_DOWN));
+                    firstMessage = false;
                 }
         );
     }
@@ -398,25 +425,21 @@ public class MainActivity extends AppCompatActivity {
 
     public void enableChatComponent() {
         runOnUiThread(() -> {
-            messageEditText.setEnabled(true);
-            sendButton.setEnabled(true);
+            messageEditText.setVisibility(View.VISIBLE);
+            sendButton.setVisibility(View.VISIBLE);
             saveConversation.setEnabled(true);
             sendTextFile.setEnabled(true);
             changeBackground.setEnabled(true);
 
-            receivePortEditText.setEnabled(false);
-            targetIPEditText.setEnabled(false);
-            targetPortEditText.setEnabled(false);
-            connectButton.setEnabled(false);
-            startServerButton.setEnabled(false);
+            receivePortEditText.setVisibility(View.GONE);
+            targetIPEditText.setVisibility(View.GONE);
+            targetPortEditText.setVisibility(View.GONE);
+            connectButton.setVisibility(View.GONE);
+            startServerButton.setVisibility(View.GONE);
 
-            receivedPortText.setTextColor(Color.GRAY);
-            targetPortText.setTextColor(Color.GRAY);
-            targetIPText.setTextColor(Color.GRAY);
 
             messageEditText.requestFocus();
             InputMethodManager inputManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-            inputManager.showSoftInput(messageEditText, InputMethodManager.SHOW_IMPLICIT);
             inputManager.showSoftInput(messageEditText, InputMethodManager.SHOW_IMPLICIT);
         });
     }
@@ -429,7 +452,7 @@ public class MainActivity extends AppCompatActivity {
         if(timeStamp)
             file = new File(path+"/Peer 2 Peer/Conversations", fileName+timeMill+".txt");
         else
-            file = new File(path+"/Peer 2 Peer/Saved txt files", fileName);
+            file = new File(path+"/Peer 2 Peer/Saved Files", fileName);
         FileOutputStream stream;
         try {
             stream = new FileOutputStream(file, false);
@@ -454,8 +477,14 @@ public class MainActivity extends AppCompatActivity {
                 layout.setBackgroundResource(R.drawable.bg3);
             else if(message.equals("Background 4"))
                 layout.setBackgroundResource(R.drawable.bg4);
-            else
+            else if(message.equals("White"))
                 layout.setBackgroundColor(Color.WHITE);
+            else{
+                byte[] decodedString = Base64.decode(message, Base64.DEFAULT);
+                Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                BitmapDrawable background = new BitmapDrawable(decodedByte);
+                layout.setBackgroundDrawable(background);
+            }
         });
     }
 
@@ -474,7 +503,7 @@ public class MainActivity extends AppCompatActivity {
     private void verifyDataFolder() {
         File folder = new File(Environment.getExternalStorageDirectory() + "/Peer 2 Peer");
         File folder1 = new File(folder.getPath() + "/Conversations");
-        File folder2 = new File(folder.getPath() + "/Saved txt files");
+        File folder2 = new File(folder.getPath() + "/Saved Files");
         if(!folder.exists() || !folder.isDirectory()) {
             folder.mkdir();
             folder1.mkdir();
@@ -516,5 +545,6 @@ public class MainActivity extends AppCompatActivity {
         path = Environment.getExternalStorageDirectory().getPath()+"/"+path.split(":")[1];
         return path;
     }
+
 
 }
