@@ -7,20 +7,20 @@
         android:title="Toggle Notification"
         android:icon="@drawable/notification_on"
         android:onClick="onNotificationClicked"
-        app:showAsAction="ifRoom" />
+        app:showAsAction="always" />
 
     <item
         android:id="@+id/darkMode"
         android:title="Toggle Dark Mode"
         android:icon="@drawable/light"
         android:onClick="onDarkModeClicked"
-        app:showAsAction="ifRoom" />
+        app:showAsAction="always" />
     <item
         android:id="@+id/wifi"
         android:title="Wifi"
         android:icon="@drawable/wifi_on"
         android:onClick="onWifiClicked"
-        app:showAsAction="ifRoom" />
+        app:showAsAction="always" />
     <item
         android:id="@+id/IP"
         android:title="My IP"

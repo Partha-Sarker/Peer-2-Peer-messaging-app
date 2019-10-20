@@ -1,5 +1,6 @@
 package com.example.p2pmessagingapp;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
@@ -17,6 +18,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.speech.RecognizerIntent;
 import android.text.format.Formatter;
 import android.util.Log;
 import android.view.Gravity;
@@ -46,6 +48,7 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
@@ -62,10 +65,10 @@ public class MainActivity extends AppCompatActivity {
     MenuItem saveConversation, changeBackground, sendTextFile, themeItem, notificationItem;
 
     Button startServerButton, connectButton;
-    ImageButton sendButton;
+    ImageButton sendButton, voiceButton;
 
-    ServerClass serverClass;
-    ClientClass clientClass;
+    Server server;
+    Client client;
 
     SendReceive sendReceive;
 
@@ -75,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
 
     MediaPlayer notification;
 
-    boolean wasClient = false, firstMessage = true, clientFirstMessage = true, darkModeEnabled, notificationEnabled;
+    boolean wasClient = false, firstMessage = true, clientFirstMessage = true, darkModeEnabled, notificationEnabled, hasHosted = false, hasConnected = false;
 
     static final int MESSAGE_READ = 1;
     static final String TAG = "ahtrap";
@@ -86,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
     SharedPreferences pref;
     SharedPreferences.Editor editor;
 
-    Handler handler = new Handler(msg -> {
+    Handler messageReceiver = new Handler(msg -> {
         if (msg.what == MESSAGE_READ) {
             byte[] readBuff = (byte[]) msg.obj;
             String tempMsg = new String(readBuff, 0, msg.arg1);
@@ -123,17 +126,18 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void run() {
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[8192 * 16];
             int bytes;
 
             while (socket != null) {
                 try {
                     bytes = inputStream.read(buffer);
+
                     if (bytes > 0) {
-                        handler.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget();
+                        messageReceiver.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget();
                     }
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    Log.e(TAG, e.toString());
                 }
             }
         }
@@ -153,12 +157,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public class ServerClass extends Thread {
+    public class Server extends Thread {
         Socket socket;
         ServerSocket serverSocket;
         int port;
 
-        public ServerClass(int port) {
+        public Server(int port) {
             this.port = port;
         }
 
@@ -167,13 +171,15 @@ public class MainActivity extends AppCompatActivity {
             try {
                 serverSocket = new ServerSocket(port);
                 Looper.prepare();
-                showToast("Server Started. Waiting for client...");
+                showToast("Listening for client on port: "+port);
+                hasHosted = true;
                 Log.d(TAG, "Waiting for client...");
                 socket = serverSocket.accept();
                 Log.d(TAG, "Connection established from server");
                 sendReceive = new SendReceive(socket);
                 sendReceive.start();
-                //enableChatComponent();
+                if(hasHosted && hasConnected)
+                    enableChatComponent();
             } catch (IOException e) {
                 e.printStackTrace();
                 Log.d(TAG, "ERROR: " + e);
@@ -184,12 +190,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public class ClientClass extends Thread {
+    public class Client extends Thread {
         Socket socket;
         String hostAdd;
         int port;
 
-        public ClientClass(String hostAddress, int port) {
+        public Client(String hostAddress, int port) {
             this.port = port;
             this.hostAdd = hostAddress;
         }
@@ -203,7 +209,9 @@ public class MainActivity extends AppCompatActivity {
                 sendReceive.start();
                 showToast("Connected to other device. You can now exchange messages.");
                 Log.d(TAG, "Client is connected to server");
-                enableChatComponent();
+                hasConnected = true;
+                if(hasHosted && hasConnected)
+                    enableChatComponent();
                 sendReceive.write(myName);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -224,6 +232,7 @@ public class MainActivity extends AppCompatActivity {
         messageEditText = findViewById(R.id.messageEditText);
         targetIPEditText = findViewById(R.id.targetIPEditText);
         sendButton = findViewById(R.id.sendButton);
+        voiceButton = findViewById(R.id.voiceButton);
         startServerButton = findViewById(R.id.startServerButton);
         connectButton = findViewById(R.id.connectDisconnectButton);
 
@@ -254,23 +263,41 @@ public class MainActivity extends AppCompatActivity {
 
         showToast("Welcome "+myName);
 
-        KeyboardVisibilityEvent.setEventListener( this, isOpen -> runOnUiThread( ()-> conversations.post(() -> conversations.fullScroll(View.FOCUS_DOWN))));
+        KeyboardVisibilityEvent.setEventListener( this, isOpen -> runOnUiThread(
+                ()-> conversations.post(() -> conversations.fullScroll(View.FOCUS_DOWN)))
+        );
     }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
         if(requestCode==123 && resultCode==RESULT_OK) {
+            String fileName = "Text File";
             Uri uri = intent.getData();
             String path = getFilePathFromUri(uri);
             File file = new File(path);
-            if(file.exists())
+            if(file.exists()){
                 Log.d(TAG, "Selected file exists");
+                fileName = file.getName();
+            }
             else
                 Log.e(TAG, "Selected file doesn't exists");
-
             String fileText = readTextFile(uri);
-            sendReceive.write("file@%@"+file.getName()+"@%@"+fileText);
+            sendReceive.write("file@%@"+fileName+"@%@"+fileText);
+        }
+        if(requestCode == 10 && resultCode == RESULT_OK){
+
+            if ( intent!= null) {
+                ArrayList<String> result = intent.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                String text = messageEditText.getText().toString();
+                if(text != null && !text.equals(""))
+                    text += " "+result.get(0);
+                else
+                    text = result.get(0);
+                messageEditText.setText(text);
+            }
+
+
         }
     }
 
@@ -297,14 +324,25 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+    @Override
+    public void onBackPressed() {
+        AlertDialog.Builder dialogueBuilder = new AlertDialog.Builder(this);
+        dialogueBuilder.setTitle("EXIT");
+        dialogueBuilder.setMessage("Are you sure?");
+        dialogueBuilder.setPositiveButton("SURE", (dialogInterface, i)->finish());
+        dialogueBuilder.setNegativeButton("NO", (dialogInterface, i)->dialogInterface.cancel());
+        AlertDialog alert = dialogueBuilder.create();
+        alert.show();
+    }
+
     public void onStartServerClicked(View v) {
         String port = receivePortEditText.getText().toString();
         if(port == null || port.equals("")){
             showToast("Type a valid port");
             return;
         }
-        serverClass = new ServerClass(Integer.parseInt(port));
-        serverClass.start();
+        server = new Server(Integer.parseInt(port));
+        server.start();
     }
 
     public void onConnectClicked(View v) {
@@ -314,8 +352,8 @@ public class MainActivity extends AppCompatActivity {
             showToast("Port or IP address is invalid");
             return;
         }
-        clientClass = new ClientClass(hostIP, Integer.parseInt(port));
-        clientClass.start();
+        client = new Client(hostIP, Integer.parseInt(port));
+        client.start();
     }
 
     public void onSendClicked(View v) {
@@ -323,6 +361,23 @@ public class MainActivity extends AppCompatActivity {
         msg = msg.trim();
         if (msg != null && !msg.equals(""))
             sendReceive.write("message@%@"+msg);
+    }
+
+    public void onVoiceClicked(View v){
+
+
+            Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+
+            if (intent.resolveActivity(getPackageManager()) != null) {
+                startActivityForResult(intent, 10);
+            } else {
+                Toast.makeText(this, "Your Device Don't Support Speech Input", Toast.LENGTH_SHORT).show();
+            }
+
+
+
     }
 
     public void onWifiClicked(MenuItem item){
@@ -507,6 +562,7 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(() -> {
             messageEditText.setVisibility(View.VISIBLE);
             sendButton.setVisibility(View.VISIBLE);
+            voiceButton.setVisibility(View.VISIBLE);
             saveConversation.setEnabled(true);
             sendTextFile.setEnabled(true);
             changeBackground.setEnabled(true);
@@ -617,10 +673,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private String getFilePathFromUri(Uri uri){
-        String path = uri.getPathSegments().get(1);
-        path = Environment.getExternalStorageDirectory().getPath()+"/"+path.split(":")[1];
+        String defaultPath = Environment.getExternalStorageDirectory().getPath();
+        String path = uri.getLastPathSegment();
+        path = path.substring(8);
+        path = defaultPath+"/"+path;
         return path;
     }
-
 
 }
