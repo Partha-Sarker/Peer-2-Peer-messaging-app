@@ -1,0 +1,6 @@
+First we need both the device connected to same wifi network. The app won't work with mobile data. After running the app the user will be provided 
+with a textfield to provide port address. User must give a valid port number and click on the "Start Server" button. It's recommended to start server from 
+both the device after launchig the app. After starting server from both the device the user can move to the next part. Now the user can give the ip address of the 
+counterpart device(check the "Extra Features" section to know how to get the ip address) and the corresponding port number to which the counterpart device opened 
+a socket earlier. And after giving the ip address and port number user can press connect button. THIS NEEDS TO BE DONE FROM BOTH THE ANDROID DIVE. 
+And then connection will be established from both end.
